@@ -29,7 +29,7 @@ Rainfall_Prediction_Project
 │       └── index.html
 │
 ├── dataset
-│   └── weatherIND.csv
+│   └── rainfall_data.csv
 │
 ├── models
 │   └── rainfall_model.pkl   (placeholder – generated after training)
@@ -204,7 +204,7 @@ Dataset contains weather attributes such as:
 Dataset file:
 
 ```
-dataset/weatherIND.csv
+dataset/rainfall_data.csv
 ```
 
 ---
@@ -240,3 +240,4 @@ Machine Learning & Software Development
 ---
 
 # ⭐ If you found this project useful, please give it a star!
+
