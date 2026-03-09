@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Rainfall Prediction System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --sky: #0a1628;
+      --mid: #0e2044;
+      --accent: #38bdf8;
+      --accent2: #7dd3fc;
+      --rain: #bae6fd;
+      --glow: rgba(56,189,248,0.18);
+      --card: rgba(14,32,68,0.82);
+      --border: rgba(56,189,248,0.18);
+      --text: #e0f2fe;
+      --muted: #7da8c8;
+      --success: #34d399;
+      --danger: #f87171;
+    }
+
+    html, body {
+      min-height: 100vh;
+      background: var(--sky);
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    /* ── Animated Sky Background ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% -10%, rgba(56,189,248,0.13) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 30% at 80% 20%, rgba(99,179,237,0.08) 0%, transparent 60%),
+        linear-gradient(180deg, #0a1628 0%, #0d1f3c 60%, #091525 100%);
+      z-index: 0;
+    }
+
+    /* ── Rain drops ── */
+    .rain-bg {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      overflow: hidden;
+    }
+    .drop {
+      position: absolute;
+      width: 1.5px;
+      background: linear-gradient(to bottom, transparent, rgba(186,230,253,0.35));
+      border-radius: 2px;
+      animation: fall linear infinite;
+      top: -120px;
+    }
+    @keyframes fall {
+      to { transform: translateY(110vh); }
+    }
+
+    /* ── Layout ── */
+    .page { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem 1rem; }
+
+    /* ── Header ── */
+    .header { text-align: center; margin-bottom: 2.2rem; }
+    .header .icon-wrap {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 68px; height: 68px; border-radius: 50%;
+      background: linear-gradient(135deg, rgba(56,189,248,0.18), rgba(99,179,237,0.08));
+      border: 1.5px solid var(--border);
+      margin-bottom: 1rem;
+      box-shadow: 0 0 32px rgba(56,189,248,0.15);
+      animation: pulseGlow 3s ease-in-out infinite;
+    }
+    @keyframes pulseGlow {
+      0%,100% { box-shadow: 0 0 24px rgba(56,189,248,0.12); }
+      50% { box-shadow: 0 0 44px rgba(56,189,248,0.28); }
+    }
+    .header .icon-wrap i { font-size: 1.9rem; color: var(--accent); }
+    .header h1 { font-family: 'Syne', sans-serif; font-size: clamp(1.6rem, 4vw, 2.2rem); font-weight: 800; letter-spacing: -0.5px; background: linear-gradient(90deg, #e0f2fe, #38bdf8, #7dd3fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .header p { color: var(--muted); font-size: 0.88rem; margin-top: 0.3rem; font-weight: 300; }
+
+    /* ── Card ── */
+    .card {
+      width: 100%; max-width: 520px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2.2rem 2rem;
+      backdrop-filter: blur(18px);
+      box-shadow: 0 8px 48px rgba(0,0,0,0.4), 0 0 0 1px rgba(56,189,248,0.07);
+      animation: slideUp 0.55s cubic-bezier(.22,1,.36,1) both;
+    }
+    @keyframes slideUp {
+      from { opacity:0; transform: translateY(30px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+
+    /* ── Grid of inputs ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+    .grid-1 { margin-top: 0.9rem; }
+
+    .field { display: flex; flex-direction: column; gap: 0.35rem; }
+    .field label { font-size: 0.72rem; font-weight: 500; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; display: flex; align-items: center; gap: 0.4rem; }
+    .field label i { font-size: 0.75rem; color: var(--accent); }
+
+    .field input {
+      background: rgba(10,22,40,0.6);
+      border: 1px solid rgba(56,189,248,0.13);
+      border-radius: 10px;
+      padding: 0.7rem 0.9rem;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+      width: 100%;
+    }
+    .field input::placeholder { color: rgba(125,168,200,0.4); font-size: 0.82rem; }
+    .field input:focus {
+      border-color: rgba(56,189,248,0.55);
+      box-shadow: 0 0 0 3px rgba(56,189,248,0.09);
+      background: rgba(14,32,68,0.9);
+    }
+    .field input:focus::placeholder { color: transparent; }
+
+    /* Rain Today toggle */
+    .toggle-row { display: flex; gap: 0.6rem; margin-top: 0.35rem; }
+    .toggle-btn {
+      flex: 1; padding: 0.65rem; border-radius: 10px; border: 1px solid rgba(56,189,248,0.13);
+      background: rgba(10,22,40,0.6); color: var(--muted); font-size: 0.88rem;
+      cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; font-weight: 500;
+      display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+    }
+    .toggle-btn.active-yes { background: rgba(52,211,153,0.12); border-color: var(--success); color: var(--success); }
+    .toggle-btn.active-no  { background: rgba(248,113,113,0.10); border-color: var(--danger); color: var(--danger); }
+    .toggle-btn:hover:not(.active-yes):not(.active-no) { border-color: rgba(56,189,248,0.3); color: var(--accent2); }
+
+    /* Hidden input for rain today */
+    #RainToday { display: none; }
+
+    /* ── Submit Button ── */
+    .btn-predict {
+      width: 100%; margin-top: 1.4rem;
+      padding: 0.9rem;
+      border: none; border-radius: 12px;
+      background: linear-gradient(135deg, #0ea5e9, #38bdf8);
+      color: #fff; font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700;
+      letter-spacing: 0.04em; cursor: pointer;
+      box-shadow: 0 4px 24px rgba(14,165,233,0.3);
+      transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 0.55rem;
+    }
+    .btn-predict:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(14,165,233,0.42); }
+    .btn-predict:active { transform: translateY(0); }
+    .btn-predict i { font-size: 1rem; }
+
+    /* ── Result Panel ── */
+    #result-panel {
+      display: none;
+      width: 100%; max-width: 520px;
+      animation: slideUp 0.5s cubic-bezier(.22,1,.36,1) both;
+    }
+
+    .result-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2.8rem 2rem 2.2rem;
+      backdrop-filter: blur(18px);
+      box-shadow: 0 8px 48px rgba(0,0,0,0.4);
+      text-align: center;
+    }
+
+    .result-icon-wrap {
+      width: 80px; height: 80px; border-radius: 50%;
+      margin: 0 auto 1.4rem;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.2rem;
+      animation: popIn 0.4s cubic-bezier(.34,1.56,.64,1) 0.15s both;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.4); opacity: 0; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+    .result-icon-wrap.rain  { background: rgba(56,189,248,0.12); border: 1.5px solid rgba(56,189,248,0.3); color: var(--accent); }
+    .result-icon-wrap.shine { background: rgba(251,191,36,0.10); border: 1.5px solid rgba(251,191,36,0.28); color: #fbbf24; }
+
+    .result-label { font-family: 'Syne', sans-serif; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem; }
+    .result-value { font-family: 'Syne', sans-serif; font-size: clamp(1.5rem, 5vw, 2rem); font-weight: 800; }
+    .result-value.rain  { background: linear-gradient(90deg, #38bdf8, #7dd3fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .result-value.shine { background: linear-gradient(90deg, #fbbf24, #fde68a); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+    .result-desc { color: var(--muted); font-size: 0.85rem; margin-top: 0.5rem; font-weight: 300; line-height: 1.5; }
+
+    /* Summary strip */
+    .summary-strip {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 0.6rem; margin-top: 1.8rem;
+    }
+    .summary-item {
+      background: rgba(10,22,40,0.55); border: 1px solid rgba(56,189,248,0.1);
+      border-radius: 10px; padding: 0.7rem 0.4rem; text-align: center;
+    }
+    .summary-item .s-val { font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 700; color: var(--accent2); }
+    .summary-item .s-key { font-size: 0.65rem; color: var(--muted); margin-top: 0.2rem; text-transform: uppercase; letter-spacing: 0.06em; }
+
+    /* Home button */
+    .btn-home {
+      width: 100%; margin-top: 1.4rem;
+      padding: 0.85rem;
+      border: 1px solid rgba(56,189,248,0.25);
+      border-radius: 12px;
+      background: transparent; color: var(--accent2);
+      font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    }
+    .btn-home:hover { background: rgba(56,189,248,0.08); border-color: rgba(56,189,248,0.45); }
+
+    /* ── Footer ── */
+    .footer { margin-top: 2rem; color: rgba(125,168,200,0.4); font-size: 0.72rem; text-align: center; }
+
+    /* ── Divider ── */
+    .divider { border: none; border-top: 1px solid rgba(56,189,248,0.08); margin: 1.2rem 0 1rem; }
+
+    /* ── Responsive ── */
+    @media (max-width: 480px) {
+      .card, #result-panel .result-card { padding: 1.6rem 1.2rem; }
+      .grid-2 { grid-template-columns: 1fr; }
+      .summary-strip { grid-template-columns: repeat(3,1fr); gap: 0.4rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Rain animation -->
+<div class="rain-bg" id="rainBg"></div>
+
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="icon-wrap"><i class="fa-solid fa-cloud-rain"></i></div>
+    <h1>Rainfall Prediction</h1>
+    <p>Enter atmospheric conditions to forecast tomorrow's rain</p>
+  </div>
+
+  <!-- ── FORM CARD ── -->
+  <div class="card" id="form-card">
+    <form action="/predict" method="post" id="predict-form">
+
+      <div class="grid-2">
+        <div class="field">
+          <label><i class="fa-solid fa-temperature-arrow-down"></i> Min Temp (°C)</label>
+          <input type="number" step="any" name="MinTemp" id="MinTemp" placeholder="e.g. 14.0" required/>
+        </div>
+        <div class="field">
+          <label><i class="fa-solid fa-temperature-arrow-up"></i> Max Temp (°C)</label>
+          <input type="number" step="any" name="MaxTemp" id="MaxTemp" placeholder="e.g. 28.5" required/>
+        </div>
+        <div class="field">
+          <label><i class="fa-solid fa-droplet"></i> Humidity 9AM (%)</label>
+          <input type="number" step="any" name="Humidity9am" id="Humidity9am" placeholder="e.g. 72" required/>
+        </div>
+        <div class="field">
+          <label><i class="fa-solid fa-droplet-slash"></i> Humidity 3PM (%)</label>
+          <input type="number" step="any" name="Humidity3pm" id="Humidity3pm" placeholder="e.g. 55" required/>
+        </div>
+        <div class="field">
+          <label><i class="fa-solid fa-gauge-high"></i> Pressure 9AM (hPa)</label>
+          <input type="number" step="any" name="Pressure9am" id="Pressure9am" placeholder="e.g. 1015" required/>
+        </div>
+        <div class="field">
+          <label><i class="fa-solid fa-gauge"></i> Pressure 3PM (hPa)</label>
+          <input type="number" step="any" name="Pressure3pm" id="Pressure3pm" placeholder="e.g. 1012" required/>
+        </div>
+      </div>
+
+      <hr class="divider"/>
+
+      <div class="field grid-1">
+        <label><i class="fa-solid fa-cloud-showers-heavy"></i> Rain Today?</label>
+        <div class="toggle-row">
+          <button type="button" class="toggle-btn" id="btnYes" onclick="setRain(1)">
+            <i class="fa-solid fa-check"></i> Yes
+          </button>
+          <button type="button" class="toggle-btn" id="btnNo" onclick="setRain(0)">
+            <i class="fa-solid fa-xmark"></i> No
+          </button>
+        </div>
+        <input type="hidden" name="RainToday" id="RainToday" value="" required/>
+      </div>
+
+      <button type="submit" class="btn-predict" id="predictBtn">
+        <i class="fa-solid fa-magnifying-glass-chart"></i> Predict Tomorrow's Rain
+      </button>
+
+    </form>
+  </div>
+
+  <!-- ── RESULT PANEL ── -->
+  <div id="result-panel">
+    <div class="result-card">
+      <div class="result-icon-wrap" id="resultIcon"></div>
+      <div class="result-label">Prediction Result</div>
+      <div class="result-value" id="resultValue"></div>
+      <div class="result-desc" id="resultDesc"></div>
+
+      <div class="summary-strip" id="summaryStrip"></div>
+
+      <button class="btn-home" onclick="goHome()">
+        <i class="fa-solid fa-arrow-left"></i> Back to Home
+      </button>
+    </div>
+  </div>
+
+  <div class="footer">Powered by ML Weather Model &nbsp;·&nbsp; <i class="fa-solid fa-shield-halved"></i> Secure &amp; Private</div>
+</div>
+
+<script>
+  /* ── Rain drops ── */
+  (function() {
+    const bg = document.getElementById('rainBg');
+    for (let i = 0; i < 55; i++) {
+      const d = document.createElement('div');
+      d.className = 'drop';
+      const h = 60 + Math.random() * 80;
+      d.style.cssText = `
+        left: ${Math.random()*100}%;
+        height: ${h}px;
+        opacity: ${0.15 + Math.random()*0.25};
+        animation-duration: ${0.6 + Math.random()*0.9}s;
+        animation-delay: ${-Math.random()*1.5}s;
+      `;
+      bg.appendChild(d);
+    }
+  })();
+
+  /* ── Rain Today toggle ── */
+  function setRain(val) {
+    document.getElementById('RainToday').value = val;
+    document.getElementById('btnYes').className = 'toggle-btn' + (val===1 ? ' active-yes' : '');
+    document.getElementById('btnNo').className  = 'toggle-btn' + (val===0 ? ' active-no'  : '');
+  }
+
+  /* ── Form submit → show result ── */
+  document.getElementById('predict-form').addEventListener('submit', function(e) {
+    // If this is a real Flask backend, let it submit normally.
+    // For front-end demo (no backend), we intercept and show UI.
+    // Remove the e.preventDefault() line when deploying with Flask.
+    e.preventDefault();
+
+    const minT  = parseFloat(document.getElementById('MinTemp').value);
+    const maxT  = parseFloat(document.getElementById('MaxTemp').value);
+    const hum9  = parseFloat(document.getElementById('Humidity9am').value);
+    const hum3  = parseFloat(document.getElementById('Humidity3pm').value);
+    const pre9  = parseFloat(document.getElementById('Pressure9am').value);
+    const pre3  = parseFloat(document.getElementById('Pressure3pm').value);
+    const rainT = document.getElementById('RainToday').value;
+
+    if (rainT === '') { alert('Please select Rain Today (Yes or No).'); return; }
+
+    // Simple heuristic demo – replace with actual backend call or Jinja result
+    const rainScore = (hum9 + hum3) / 2 - (pre9 + pre3) / 2 * 0.05 + parseInt(rainT) * 20 + (maxT - minT) * 0.5;
+    const willRain = rainScore > 50;
+
+    showResult(willRain, { minT, maxT, hum9, hum3, pre9, pre3 });
+  });
+
+  function showResult(willRain, data) {
+    const icon   = document.getElementById('resultIcon');
+    const val    = document.getElementById('resultValue');
+    const desc   = document.getElementById('resultDesc');
+    const strip  = document.getElementById('summaryStrip');
+
+    if (willRain) {
+      icon.className = 'result-icon-wrap rain';
+      icon.innerHTML = '<i class="fa-solid fa-cloud-rain"></i>';
+      val.className  = 'result-value rain';
+      val.textContent = 'Rain Expected';
+      desc.textContent = 'There is a high likelihood of rainfall tomorrow. Consider carrying an umbrella and planning accordingly.';
+    } else {
+      icon.className = 'result-icon-wrap shine';
+      icon.innerHTML = '<i class="fa-solid fa-sun"></i>';
+      val.className  = 'result-value shine';
+      val.textContent = 'No Rain Expected';
+      desc.textContent = 'Conditions suggest a dry day tomorrow. Great weather ahead — enjoy the sunshine!';
+    }
+
+    strip.innerHTML = `
+      <div class="summary-item"><div class="s-val">${data.minT}°</div><div class="s-key">Min Temp</div></div>
+      <div class="summary-item"><div class="s-val">${data.maxT}°</div><div class="s-key">Max Temp</div></div>
+      <div class="summary-item"><div class="s-val">${Math.round((data.hum9+data.hum3)/2)}%</div><div class="s-key">Avg Humidity</div></div>
+    `;
+
+    document.getElementById('form-card').style.display = 'none';
+    const rp = document.getElementById('result-panel');
+    rp.style.display = 'block';
+    rp.style.animation = 'none';
+    rp.offsetHeight; // reflow
+    rp.style.animation = '';
+  }
+
+  function goHome() {
+    document.getElementById('result-panel').style.display = 'none';
+    const fc = document.getElementById('form-card');
+    fc.style.display = 'block';
+    fc.style.animation = 'none';
+    fc.offsetHeight;
+    fc.style.animation = '';
+    // Reset form
+    document.getElementById('predict-form').reset();
+    document.getElementById('btnYes').className = 'toggle-btn';
+    document.getElementById('btnNo').className  = 'toggle-btn';
+    document.getElementById('RainToday').value  = '';
+  }
+
+  /* ── Flask Jinja injection (for real backend) ──
+     Uncomment block below if serving from Flask with {{ prediction }} context.
+     It reads the server-rendered result and displays the result panel automatically.
+  */
+  /*
+  (function() {
+    const prediction = "{{ prediction | default('') }}";
+    if (prediction) {
+      const willRain = prediction.toLowerCase().includes('yes') || prediction.toLowerCase().includes('rain');
+      const data = {
+        minT:  parseFloat("{{ MinTemp | default(0) }}"),
+        maxT:  parseFloat("{{ MaxTemp | default(0) }}"),
+        hum9:  parseFloat("{{ Humidity9am | default(0) }}"),
+        hum3:  parseFloat("{{ Humidity3pm | default(0) }}"),
+        pre9:  parseFloat("{{ Pressure9am | default(0) }}"),
+        pre3:  parseFloat("{{ Pressure3pm | default(0) }}"),
+      };
+      showResult(willRain, data);
+    }
+  })();
+  */
+</script>
+</body>
+</html>
